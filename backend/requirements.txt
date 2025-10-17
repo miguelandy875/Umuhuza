@@ -1,0 +1,57 @@
+# Core Django
+Django==5.2.7
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+django-filter==25.2
+python-decouple==3.8
+
+# Database
+psycopg2-binary==2.9.11
+
+# Authentication
+djangorestframework-simplejwt==5.5.1
+
+# Image Processing
+Pillow==12.0.0
+django-imagekit==6.0.0
+pilkit==3.0
+
+# Background Tasks (Optional)
+celery==5.5.3
+redis==6.4.0
+kombu==5.5.4
+amqp==5.3.1
+billiard==4.2.2
+
+# Storage (for production)
+django-storages==1.14.2
+boto3==1.34.10
+
+# Development Tools
+django-extensions==3.2.3
+ipython==8.18.1
+
+# Testing
+requests==2.32.5
+
+# Production Server
+gunicorn==21.2.0
+
+# Additional Utilities
+certifi==2025.10.5
+charset-normalizer==3.4.4
+click==8.3.0
+click-didyoumean==0.3.1
+click-plugins==1.1.1.2
+click-repl==0.3.0
+idna==3.11
+packaging==25.0
+prompt_toolkit==3.0.52
+PyJWT==2.10.1
+python-dateutil==2.9.0.post0
+six==1.17.0
+sqlparse==0.5.3
+tzdata==2025.2
+urllib3==2.5.0
+vine==5.1.0
+wcwidth==0.2.14
