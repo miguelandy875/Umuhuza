@@ -77,8 +77,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/umuhuza-backend.git
-cd umuhuza-backend/backend
+git clone [https://github.com/yourusername/umuhuza-backend.git](https://github.com/Dahl23/Umuhuza.git)
+cd umuhuza/backend
 ```
 
 ### 2. Create Virtual Environment
