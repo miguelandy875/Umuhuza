@@ -77,7 +77,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/yourusername/umuhuza-backend.git](https://github.com/Dahl23/Umuhuza.git)
+git clone https://github.com/Dahl23/Umuhuza.git
 cd umuhuza/backend
 ```
 
