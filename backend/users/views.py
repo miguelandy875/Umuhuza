@@ -47,7 +47,8 @@ def register_view(request):
         "email": "john@example.com",
         "phone_number": "+25779123456",
         "password": "SecurePass123",
-        "password_confirm": "SecurePass123"
+        "password_confirm": "SecurePass123",
+        "verification_method": "email"  // or "phone" or "both"
     }
     """
     serializer = UserRegistrationSerializer(data=request.data)
@@ -55,40 +56,51 @@ def register_view(request):
     if serializer.is_valid():
         user = serializer.save()
         
-        # Generate email verification code
-        email_code = generate_code()
-        VerificationCode.objects.create(
-            userid=user,
-            code=email_code,
-            code_type='email',
-            contact_info=user.email,
-            expires_at=timezone.now() + timedelta(minutes=15)
-        )
+        # Get preferred verification method
+        verification_method = request.data.get('verification_method', 'both')
         
-        # Generate phone verification code
-        phone_code = generate_code()
-        VerificationCode.objects.create(
-            userid=user,
-            code=phone_code,
-            code_type='phone',
-            contact_info=user.phone_number,
-            expires_at=timezone.now() + timedelta(minutes=10)
-        )
+        codes = {}
         
-        # TODO: Send email with email_code
-        # TODO: Send SMS with phone_code
-        print(f"Email verification code: {email_code}")
-        print(f"Phone verification code: {phone_code}")
+        # Generate email verification code if needed
+        if verification_method in ['email', 'both']:
+            email_code = generate_code()
+            VerificationCode.objects.create(
+                userid=user,
+                code=email_code,
+                code_type='email',
+                contact_info=user.email,
+                expires_at=timezone.now() + timedelta(minutes=15)
+            )
+            codes['email_code'] = email_code
+            # TODO: Send email with email_code
+            print(f"Email verification code for {user.email}: {email_code}")
+        
+        # Generate phone verification code if needed
+        if verification_method in ['phone', 'both']:
+            phone_code = generate_code()
+            VerificationCode.objects.create(
+                userid=user,
+                code=phone_code,
+                code_type='phone',
+                contact_info=user.phone_number,
+                expires_at=timezone.now() + timedelta(minutes=10)
+            )
+            codes['phone_code'] = phone_code
+            # TODO: Send SMS with phone_code
+            print(f"Phone verification code for {user.phone_number}: {phone_code}")
+        
+        # Generate tokens so user can access verification endpoints
+        tokens = get_tokens_for_user(user)
         
         return Response({
-            'message': 'Registration successful! Please verify your email and phone.',
+            'message': 'Registration successful! Please verify your account.',
             'user': UserProfileSerializer(user).data,
-            'email_code': email_code,  # Remove in production
-            'phone_code': phone_code,  # Remove in production
+            'tokens': tokens,
+            'verification_method': verification_method,
+            **codes  # Include codes in development (remove in production)
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -174,12 +186,17 @@ def verify_email_view(request):
         
         if not verification.is_valid():
             return Response({
-                'error': 'Verification code has expired'
+                'error': 'Verification code has expired. Please request a new one.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Mark as verified
         request.user.email_verified = True
         request.user.email_verified_at = timezone.now()
+        
+        # Check if fully verified
+        if request.user.phone_verified:
+            request.user.is_verified = True
+        
         request.user.save()
         
         # Mark code as used
@@ -188,7 +205,9 @@ def verify_email_view(request):
         verification.save()
         
         return Response({
-            'message': 'Email verified successfully'
+            'message': 'Email verified successfully',
+            'email_verified': True,
+            'is_fully_verified': request.user.is_verified
         }, status=status.HTTP_200_OK)
         
     except VerificationCode.DoesNotExist:
@@ -204,7 +223,7 @@ def verify_phone_view(request):
     Verify phone with code
     POST /api/auth/verify-phone/
     {
-        "code": "123456"
+        "code": "654321"
     }
     """
     code = request.data.get('code')
@@ -224,29 +243,32 @@ def verify_phone_view(request):
         
         if not verification.is_valid():
             return Response({
-                'error': 'Verification code has expired'
+                'error': 'Verification code has expired. Please request a new one.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Mark as verified
         request.user.phone_verified = True
         request.user.phone_verified_at = timezone.now()
+        
+        # Check if fully verified
+        if request.user.email_verified:
+            request.user.is_verified = True
+        
         request.user.save()
-        check_and_award_badges(request.user)
         
         # Mark code as used
         verification.is_used = True
         verification.used_at = timezone.now()
         verification.save()
         
-        # Update is_verified if both email and phone verified
-        if request.user.email_verified and request.user.phone_verified:
-            request.user.is_verified = True
-            request.user.save()
+        # Notify if fully verified
         if request.user.is_verified:
+            from notifications.utils import notify_verification_complete
             notify_verification_complete(request.user)
         
         return Response({
             'message': 'Phone verified successfully',
+            'phone_verified': True,
             'is_fully_verified': request.user.is_verified
         }, status=status.HTTP_200_OK)
         
@@ -311,6 +333,20 @@ def resend_code_view(request):
         'message': f'Verification code sent to your {code_type}',
         'code': new_code  # Remove in production
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def skip_verification_view(request):
+    """
+    Skip verification temporarily (user can verify later)
+    POST /api/auth/skip-verification/
+    """
+    # User can use the platform but with limitations
+    return Response({
+        'message': 'You can verify your account later from your profile.',
+        'user': UserProfileSerializer(request.user).data
+    })
 
 
 @api_view(['GET'])
