@@ -17,6 +17,11 @@ export default function ListingCard({ listing, onFavoriteChange }: ListingCardPr
   const [isFavorited, setIsFavorited] = useState(listing.is_favorited || false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
 
+   // Safety check - if no listing or seller data, don't render
+  if (!listing || !listing.seller) {
+    return null;
+  }
+  
   const primaryImage = listing.images.find(img => img.is_primary) || listing.images[0];
   const imageUrl = primaryImage?.image_url || '/placeholder-image.jpg';
 

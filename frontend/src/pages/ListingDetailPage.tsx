@@ -10,7 +10,7 @@ import { useRequireVerification } from '../hooks/useRequireVerification';
 import { 
   MapPin, Eye, Heart, Share2, Flag, MessageCircle, 
   ChevronLeft, ChevronRight, Phone, Mail, Calendar,
-  ArrowLeft
+  ArrowLeft, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -267,7 +267,15 @@ export default function ListingDetailPage() {
                   <Button onClick={handleShare} variant="outline" className="flex-1">
                     <Share2 className="w-5 h-5" />
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(listing.list_location)}`, '_blank')}
+                    variant="outline" 
+                    className="flex-1"
+                    title="View on Map"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                  </Button>
+                  <Button variant="outline" className="flex-1" title="Report Listing">
                     <Flag className="w-5 h-5" />
                   </Button>
                 </div>
@@ -303,37 +311,37 @@ export default function ListingDetailPage() {
                   className="flex items-center gap-3 mb-4 hover:bg-gray-50 p-2 rounded-lg transition-colors"
                 >
                   <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-semibold text-lg">
-                    {listing.seller.user_firstname[0]}
+                    {listing.seller?.user_firstname?.[0] || listing.seller?.full_name?.[0] || '?'}
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">
-                      {listing.seller.full_name}
+                      {listing.seller?.full_name || 'Unknown'}
                     </p>
-                    {listing.seller.is_verified && (
+                    {listing.seller?.is_verified && (
                       <p className="text-sm text-green-600 flex items-center gap-1">
                         ✓ Verified User
                       </p>
                     )}
                     <p className="text-sm text-gray-500">
-                      {listing.seller.user_role}
+                      {listing.seller?.user_role || 'user'}
                     </p>
                   </div>
                 </Link>
 
                 <div className="space-y-2 pt-4 border-t border-gray-200">
                   
-                  <a href={`tel:${listing.seller.phone_number}`}
+                  <a href={`tel:${listing.seller?.phone_number}`}
                     className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
                   >
                     <Phone className="w-4 h-4" />
-                    <span className="text-sm">{listing.seller.phone_number}</span>
+                    <span className="text-sm">{listing.seller?.phone_number || 'N/A'}</span>
                   </a>
                   
-                  <a href={`mailto:${listing.seller.email}`}
+                  <a href={`mailto:${listing.seller?.email}`}
                     className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
                   >
                     <Mail className="w-4 h-4" />
-                    <span className="text-sm">{listing.seller.email}</span>
+                    <span className="text-sm">{listing.seller?.email || 'N/A'}</span>
                   </a>
                 </div>
               </div>
