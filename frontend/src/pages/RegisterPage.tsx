@@ -47,7 +47,15 @@ export default function RegisterPage() {
     try {
       const response = await authApi.register(data);
       login(response.user, response.tokens);
-      toast.success('Registration successful!');
+      
+      // Show different message based on verification method
+      if (data.verification_method === 'both') {
+        toast.success('Registration successful! Check your email and phone for verification codes.');
+      } else if (data.verification_method === 'email') {
+        toast.success('Registration successful! Check your email for verification code.');
+      } else {
+        toast.success('Registration successful! Check your phone for verification code.');
+      }
       
       // Pass verification method to verify page
       navigate('/verify', { 

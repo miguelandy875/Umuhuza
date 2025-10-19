@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { listingsApi } from '../../api/listings';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import { useRequireVerification } from '../../hooks/useRequireVerification';
 
 interface ListingCardProps {
   listing: Listing;
@@ -19,12 +20,18 @@ export default function ListingCard({ listing, onFavoriteChange }: ListingCardPr
   const primaryImage = listing.images.find(img => img.is_primary) || listing.images[0];
   const imageUrl = primaryImage?.image_url || '/placeholder-image.jpg';
 
+  const { checkVerification } = useRequireVerification();
+
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!isAuthenticated) {
       toast.error('Please login to save favorites');
+      return;
+    }
+
+     if (!checkVerification('save favorites')) {
       return;
     }
 

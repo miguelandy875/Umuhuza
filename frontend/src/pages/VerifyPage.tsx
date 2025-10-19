@@ -20,7 +20,7 @@ export default function VerifyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [verificationMethod, setVerificationMethod] = useState<string>('both');
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<VerificationForm>();
+  const { register, handleSubmit, formState: { errors } } = useForm<VerificationForm>();
 
   useEffect(() => {
     // Get verification method from navigation state
@@ -235,14 +235,19 @@ export default function VerifyPage() {
               </Button>
               
               {canSkip && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  fullWidth
-                  onClick={handleSkip}
-                >
-                  Skip for Now
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    fullWidth
+                    onClick={handleSkip}
+                  >
+                    I'll Verify Later
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center">
+                    You can browse listings but won't be able to post or message until verified
+                  </p>
+                </div>
               )}
             </div>
           ) : (

@@ -6,6 +6,7 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import ListingCard from '../components/listings/ListingCard';
+import { useRequireVerification } from '../hooks/useRequireVerification';
 import { 
   MapPin, Eye, Heart, Share2, Flag, MessageCircle, 
   ChevronLeft, ChevronRight, Phone, Mail, Calendar,
@@ -16,6 +17,7 @@ import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 
 export default function ListingDetailPage() {
+  
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
@@ -64,11 +66,18 @@ export default function ListingDetailPage() {
       toast.success('Link copied to clipboard!');
     }
   };
+  const { checkVerification } = useRequireVerification();
 
   const handleContactSeller = () => {
+
     if (!isAuthenticated) {
       toast.error('Please login to contact seller');
       navigate('/login');
+      return;
+    }
+    navigate(`/messages?listing=${id}`);
+
+    if (!checkVerification('contact sellers')) {
       return;
     }
     navigate(`/messages?listing=${id}`);
