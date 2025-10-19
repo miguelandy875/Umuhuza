@@ -64,7 +64,6 @@ export interface RegisterData {
   phone_number: string;
   password: string;
   password_confirm: string;
-  verification_method: 'email' | 'phone' | 'both';
 }
 
 export interface AuthResponse {

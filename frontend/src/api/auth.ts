@@ -35,4 +35,14 @@ export const authApi = {
     const response = await apiClient.post('/auth/resend-code/', { code_type: codeType });
     return response.data;
   },
+
+  updateEmail: async (email: string): Promise<{ message: string; email: string; code?: string }> => {
+    const response = await apiClient.put('/auth/update-email/', { email });
+    return response.data;
+  },
+
+  updatePhone: async (phone_number: string): Promise<{ message: string; phone_number: string; code?: string }> => {
+    const response = await apiClient.put('/auth/update-phone/', { phone_number });
+    return response.data;
+  },
 };

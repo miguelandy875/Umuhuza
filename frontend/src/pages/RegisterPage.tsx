@@ -24,9 +24,6 @@ const schema = yup.object({
   password_confirm: yup.string()
     .oneOf([yup.ref('password')], 'Passwords must match')
     .required('Please confirm password'),
-  verification_method: yup.string()
-    .oneOf(['email', 'phone', 'both'])
-    .required('Please select verification method'),
 });
 
 export default function RegisterPage() {
@@ -47,20 +44,8 @@ export default function RegisterPage() {
     try {
       const response = await authApi.register(data);
       login(response.user, response.tokens);
-      
-      // Show different message based on verification method
-      if (data.verification_method === 'both') {
-        toast.success('Registration successful! Check your email and phone for verification codes.');
-      } else if (data.verification_method === 'email') {
-        toast.success('Registration successful! Check your email for verification code.');
-      } else {
-        toast.success('Registration successful! Check your phone for verification code.');
-      }
-      
-      // Pass verification method to verify page
-      navigate('/verify', { 
-        state: { verification_method: data.verification_method }
-      });
+      toast.success('Registration successful!');
+      navigate('/verify');
     } catch (error: any) {
       const errorData = error.response?.data;
       if (errorData) {
@@ -142,65 +127,6 @@ export default function RegisterPage() {
               error={errors.password_confirm?.message}
               {...register('password_confirm')}
             />
-
-            {/* Verification Method Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                How would you like to verify your account?
-              </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    value="email"
-                    {...register('verification_method')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <div>
-                    <div className="font-medium">Email Only</div>
-                    <div className="text-sm text-gray-500">Verification code sent to email</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    value="phone"
-                    {...register('verification_method')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <div>
-                    <div className="font-medium">Phone Only (SMS)</div>
-                    <div className="text-sm text-gray-500">Verification code sent via SMS</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    value="both"
-                    defaultChecked
-                    {...register('verification_method')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <div>
-                    <div className="font-medium">Both (Recommended)</div>
-                    <div className="text-sm text-gray-500">Verify via email and phone for maximum security</div>
-                  </div>
-                </label>
-              </div>
-              {errors.verification_method && (
-                <p className="mt-1 text-sm text-red-600">{errors.verification_method.message}</p>
-              )}
-            </div>
-          </div>
-          {/* <Input
-              label="Confirm Password"
-              type="password"
-              autoComplete="new-password"
-              error={errors.password_confirm?.message}
-              {...register('password_confirm')}
-            />
           </div>
 
           
@@ -223,7 +149,7 @@ export default function RegisterPage() {
                 Privacy Policy
               </Link>
             </label>
-          </div> */}
+          </div>
 
 
           <Button type="submit" fullWidth isLoading={isLoading}>

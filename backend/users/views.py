@@ -1,4 +1,6 @@
 from django.shortcuts import render
+
+from umuhuza_api import settings
 from .utils import check_and_award_badges
 from notifications.utils import notify_verification_complete
 from rest_framework import status, generics
@@ -47,8 +49,7 @@ def register_view(request):
         "email": "john@example.com",
         "phone_number": "+25779123456",
         "password": "SecurePass123",
-        "password_confirm": "SecurePass123",
-        "verification_method": "email"  // or "phone" or "both"
+        "password_confirm": "SecurePass123"
     }
     """
     serializer = UserRegistrationSerializer(data=request.data)
@@ -56,48 +57,40 @@ def register_view(request):
     if serializer.is_valid():
         user = serializer.save()
         
-        # Get preferred verification method
-        verification_method = request.data.get('verification_method', 'both')
+        # Always generate BOTH codes
+        email_code = generate_code()
+        VerificationCode.objects.create(
+            userid=user,
+            code=email_code,
+            code_type='email',
+            contact_info=user.email,
+            expires_at=timezone.now() + timedelta(minutes=15)
+        )
         
-        codes = {}
+        phone_code = generate_code()
+        VerificationCode.objects.create(
+            userid=user,
+            code=phone_code,
+            code_type='phone',
+            contact_info=user.phone_number,
+            expires_at=timezone.now() + timedelta(minutes=10)
+        )
         
-        # Generate email verification code if needed
-        if verification_method in ['email', 'both']:
-            email_code = generate_code()
-            VerificationCode.objects.create(
-                userid=user,
-                code=email_code,
-                code_type='email',
-                contact_info=user.email,
-                expires_at=timezone.now() + timedelta(minutes=15)
-            )
-            codes['email_code'] = email_code
-            # TODO: Send email with email_code
-            print(f"Email verification code for {user.email}: {email_code}")
+        # TODO: Send email with email_code
+        # TODO: Send SMS with phone_code
+        print(f"📧 Email verification code for {user.email}: {email_code}")
+        print(f"📱 Phone verification code for {user.phone_number}: {phone_code}")
         
-        # Generate phone verification code if needed
-        if verification_method in ['phone', 'both']:
-            phone_code = generate_code()
-            VerificationCode.objects.create(
-                userid=user,
-                code=phone_code,
-                code_type='phone',
-                contact_info=user.phone_number,
-                expires_at=timezone.now() + timedelta(minutes=10)
-            )
-            codes['phone_code'] = phone_code
-            # TODO: Send SMS with phone_code
-            print(f"Phone verification code for {user.phone_number}: {phone_code}")
-        
-        # Generate tokens so user can access verification endpoints
+        # Generate tokens
         tokens = get_tokens_for_user(user)
         
         return Response({
-            'message': 'Registration successful! Please verify your account.',
+            'message': 'Registration successful! Please verify your email and phone.',
             'user': UserProfileSerializer(user).data,
             'tokens': tokens,
-            'verification_method': verification_method,
-            **codes  # Include codes in development (remove in production)
+            # Only include codes in development
+            'email_code': email_code if settings.DEBUG else None,
+            'phone_code': phone_code if settings.DEBUG else None,
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -381,4 +374,114 @@ def update_profile_view(request):
         })
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_email_view(request):
+    """
+    Update email and send new verification code
+    PUT /api/auth/update-email/
+    {
+        "email": "newemail@example.com"
+    }
+    """
+    new_email = request.data.get('email')
+    
+    if not new_email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if email already exists
+    if User.objects.filter(email=new_email).exclude(userid=request.user.userid).exists():
+        return Response({
+            'error': 'This email is already registered'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update email
+    request.user.email = new_email
+    request.user.email_verified = False
+    request.user.email_verified_at = None
+    request.user.save()
+    
+    # Invalidate old codes
+    VerificationCode.objects.filter(
+        userid=request.user,
+        code_type='email',
+        is_used=False
+    ).update(is_used=True)
+    
+    # Generate new code
+    email_code = generate_code()
+    VerificationCode.objects.create(
+        userid=request.user,
+        code=email_code,
+        code_type='email',
+        contact_info=new_email,
+        expires_at=timezone.now() + timedelta(minutes=15)
+    )
+    
+    print(f"📧 New email verification code for {new_email}: {email_code}")
+    
+    return Response({
+        'message': 'Email updated. Verification code sent.',
+        'email': new_email,
+        'code': email_code if settings.DEBUG else None
+    })
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_phone_view(request):
+    """
+    Update phone and send new verification code
+    PUT /api/auth/update-phone/
+    {
+        "phone_number": "+25779999999"
+    }
+    """
+    new_phone = request.data.get('phone_number')
+    
+    if not new_phone:
+        return Response({
+            'error': 'Phone number is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate phone format
+    import re
+    if not re.match(r'^\+257[0-9]{8}$', new_phone):
+        return Response({
+            'error': 'Phone must start with +257 and have 8 digits'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update phone
+    request.user.phone_number = new_phone
+    request.user.phone_verified = False
+    request.user.phone_verified_at = None
+    request.user.save()
+    
+    # Invalidate old codes
+    VerificationCode.objects.filter(
+        userid=request.user,
+        code_type='phone',
+        is_used=False
+    ).update(is_used=True)
+    
+    # Generate new code
+    phone_code = generate_code()
+    VerificationCode.objects.create(
+        userid=request.user,
+        code=phone_code,
+        code_type='phone',
+        contact_info=new_phone,
+        expires_at=timezone.now() + timedelta(minutes=10)
+    )
+    
+    print(f"📱 New phone verification code for {new_phone}: {phone_code}")
+    
+    return Response({
+        'message': 'Phone updated. Verification code sent.',
+        'phone_number': new_phone,
+        'code': phone_code if settings.DEBUG else None
+    })
 

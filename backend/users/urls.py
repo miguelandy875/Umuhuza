@@ -18,4 +18,8 @@ urlpatterns = [
     # Profile
     path('profile/', views.profile_view, name='profile'),
     path('profile/update/', views.update_profile_view, name='update-profile'),
+    
+    # Update contact info
+    path('update-email/', views.update_email_view, name='update-email'),
+    path('update-phone/', views.update_phone_view, name='update-phone'),
 ]

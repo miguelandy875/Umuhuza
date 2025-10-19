@@ -226,18 +226,20 @@ def similar_listings(request, pk):
     Get similar listings (same category, similar price)
     GET /api/listings/{id}/similar/
     """
+    from decimal import Decimal
+    
     listing = get_object_or_404(Listing, pk=pk)
     
-    # Price range: ±30%
-    min_price = listing.listing_price * 0.7
-    max_price = listing.listing_price * 1.3
+    # Price range: ±30% using Decimal arithmetic
+    min_price = listing.listing_price * Decimal('0.7')
+    max_price = listing.listing_price * Decimal('1.3')
     
     similar = Listing.objects.filter(
         cat_id=listing.cat_id,
         listing_status='active',
         listing_price__gte=min_price,
         listing_price__lte=max_price
-    ).exclude(pk=pk).order_by('-createdat')[:6]
+    ).exclude(pk=pk).select_related('userid', 'cat_id').prefetch_related('images').order_by('-createdat')[:6]
     
     serializer = ListingSerializer(similar, many=True)
     return Response(serializer.data)
