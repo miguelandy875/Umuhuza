@@ -388,6 +388,7 @@ export default function VerifyPage() {
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 All Set! 
+                
               </h3>
               <p className="text-gray-600 mb-6">
                 Your account is fully verified. You now have access to all features!

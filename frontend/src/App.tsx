@@ -8,6 +8,10 @@ import VerifyPage from './pages/VerifyPage';
 import ListingsPage from './pages/ListingsPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ListingDetailPage from './pages/ListingDetailPage';
+import CreateListingPage from './pages/CreateListingPage';
+import MyListingsPage from './pages/MyListingsPage';
+import FavoritesPage from './pages/FavoritesPage';
+import ProfilePage from './pages/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +34,37 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/listings/:id" element={<ListingDetailPage />} />
+          <Route path="/listings/create" element={
+            <ProtectedRoute>
+              <CreateListingPage />
+            </ProtectedRoute>
+            }
+          />
+
+          <Route
+    path="/my-listings"
+  element={
+    <ProtectedRoute>
+      <MyListingsPage />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/favorites"
+  element={
+    <ProtectedRoute>
+      <FavoritesPage />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  }
+/>
           
           {/* Protected Routes */}
           <Route
