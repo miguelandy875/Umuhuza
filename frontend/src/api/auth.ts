@@ -45,4 +45,9 @@ export const authApi = {
     const response = await apiClient.put('/auth/update-phone/', { phone_number });
     return response.data;
   },
+
+  updateProfile: async (data: Partial<User>): Promise<{ message: string; user: User }> => {
+    const response = await apiClient.put('/auth/profile/update/', data);
+    return response.data;
+  },
 };
