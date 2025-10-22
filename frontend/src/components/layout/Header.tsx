@@ -4,6 +4,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { messagesApi } from "../../api/messages";
+import NotificationsDropdown from "../notifications/NotificationsDropdown";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -77,6 +78,7 @@ export default function Header() {
                   </Link>
                 )}
                 <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
+                  <NotificationsDropdown />
                   <Link
                     to="/profile"
                     className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
