@@ -80,3 +80,20 @@ export interface ApiError {
   detail?: string;
   [key: string]: any;
 }
+
+export interface Notification {
+  notif_id: number;
+  notif_title: string;
+  notif_message: string;
+  notif_type: 'system' | 'chat' | 'report' | 'payment' | 'listing' | 'review' | 'verification';
+  link_url?: string;
+  is_read: boolean;
+  createdat: string;
+  read_at?: string;
+}
+
+export interface NotificationsResponse {
+  unread_count: number;
+  unread: Notification[];
+  read: Notification[];
+}
