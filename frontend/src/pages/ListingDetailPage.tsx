@@ -6,6 +6,7 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import ListingCard from '../components/listings/ListingCard';
+import ReportModal from '../components/common/ReportModal';
 import { useRequireVerification } from '../hooks/useRequireVerification';
 import { 
   MapPin, Eye, Heart, Share2, Flag, MessageCircle, 
@@ -23,6 +24,7 @@ export default function ListingDetailPage() {
   const { isAuthenticated, user } = useAuthStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Fetch listing
   const { data: listing, isLoading, error } = useQuery({
@@ -275,7 +277,12 @@ export default function ListingDetailPage() {
                   >
                     <ExternalLink className="w-5 h-5" />
                   </Button>
-                  <Button variant="outline" className="flex-1" title="Report Listing">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    title="Report Listing"
+                    onClick={() => setIsReportModalOpen(true)}
+                  >
                     <Flag className="w-5 h-5" />
                   </Button>
                 </div>
@@ -371,6 +378,15 @@ export default function ListingDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Report Modal */}
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          listingId={Number(id)}
+          reportType="listing"
+          itemTitle={listing?.listing_title}
+        />
       </div>
     </Layout>
   );

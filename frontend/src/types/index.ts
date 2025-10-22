@@ -97,3 +97,21 @@ export interface NotificationsResponse {
   unread: Notification[];
   read: Notification[];
 }
+
+export interface Report {
+  reportmiscond_id: number;
+  reporter: User;
+  reported_user?: User;
+  listing_id?: number;
+  report_reason: string;
+  report_type: 'spam' | 'fraud' | 'inappropriate' | 'duplicate' | 'harassment' | 'other';
+  report_status: 'pending' | 'resolved' | 'rejected';
+  createdat: string;
+}
+
+export interface ReportCreateData {
+  reported_userid?: number;
+  listing_id?: number;
+  report_type: 'spam' | 'fraud' | 'inappropriate' | 'duplicate' | 'harassment' | 'other';
+  report_reason: string;
+}
