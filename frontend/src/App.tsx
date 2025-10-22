@@ -76,11 +76,6 @@ function App() {
             }
           />
 
-          {/* Temporary placeholders - we'll build these next */}
-          <Route path="/profile" element={<div>Profile Page (Coming Soon)</div>} />
-          <Route path="/messages" element={<div>Messages Page (Coming Soon)</div>} />
-          <Route path="/favorites" element={<div>Favorites Page (Coming Soon)</div>} />
-
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
