@@ -54,25 +54,36 @@ export default function MessagesPage() {
     mutationFn: ({ chatId, content }: { chatId: number; content: string }) =>
       messagesApi.sendMessage(chatId, content),
     onSuccess: () => {
+      setMessageInput('');
+      // Optimistically update without full page refresh
       queryClient.invalidateQueries({ queryKey: ['messages', selectedChatId] });
       queryClient.invalidateQueries({ queryKey: ['chats'] });
-      setMessageInput('');
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
     onError: () => {
       toast.error('Failed to send message');
     },
   });
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (only within chat area)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      const chatArea = messagesEndRef.current.parentElement;
+      if (chatArea) {
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+    }
   }, [messages]);
 
-  // Mark messages as read when viewing
+  // Mark messages as read when viewing (debounced to avoid excessive API calls)
   useEffect(() => {
-    if (selectedChatId && messages) {
-      messagesApi.markAsRead(selectedChatId);
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
+    if (selectedChatId && messages && messages.length > 0) {
+      const timer = setTimeout(() => {
+        messagesApi.markAsRead(selectedChatId);
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [selectedChatId, messages, queryClient]);
 

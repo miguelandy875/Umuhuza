@@ -52,9 +52,9 @@ export default function Header() {
                 </Link>
                 <Link
                   to="/messages"
-                  className="text-gray-700 hover:text-primary-600 relative"
+                  className="text-gray-700 hover:text-primary-600 relative inline-block"
                 >
-                  Messages
+                  <span>Messages</span>
                   {unreadCount && unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                       {unreadCount > 9 ? "9+" : unreadCount}
@@ -67,6 +67,15 @@ export default function Header() {
                 >
                   Favorites
                 </Link>
+                {/* Show My Listings link for sellers */}
+                {user?.user_role !== 'buyer' && (
+                  <Link
+                    to="/my-listings"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
+                    My Listings
+                  </Link>
+                )}
                 <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
                   <Link
                     to="/profile"
@@ -133,9 +142,14 @@ export default function Header() {
                   </Link>
                   <Link
                     to="/messages"
-                    className="text-gray-700 hover:text-primary-600"
+                    className="text-gray-700 hover:text-primary-600 flex items-center justify-between"
                   >
-                    Messages
+                    <span>Messages</span>
+                    {unreadCount && unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/favorites"
@@ -143,6 +157,15 @@ export default function Header() {
                   >
                     Favorites
                   </Link>
+                  {/* Show My Listings link for sellers in mobile menu */}
+                  {user?.user_role !== 'buyer' && (
+                    <Link
+                      to="/my-listings"
+                      className="text-gray-700 hover:text-primary-600"
+                    >
+                      My Listings
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="text-gray-700 hover:text-primary-600"

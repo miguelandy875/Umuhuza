@@ -11,6 +11,7 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import ImageUpload from '../components/listings/ImageUpload';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import LocationInput from '../components/common/LocationInput';
 import { Plus, ArrowLeft } from 'lucide-react';
 
 interface ListingFormData {
@@ -209,7 +210,7 @@ export default function CreateListingPage() {
               />
 
               {/* Location */}
-              <Input
+              <LocationInput
                 label="Location *"
                 placeholder="e.g., Bujumbura, Rohero"
                 error={errors.list_location?.message}
