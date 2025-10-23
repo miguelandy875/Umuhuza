@@ -4,12 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { listingsApi } from '../api/listings';
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
-import Avatar from '../components/common/Avatar';
 import ReviewsList from '../components/reviews/ReviewsList';
 import {
   Mail, Phone, Calendar, Shield, Edit, LogOut,
   CheckCircle, XCircle,
-  Heart, Building2, Zap, Star
+  Heart, Building2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';

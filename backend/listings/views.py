@@ -111,48 +111,7 @@ def listing_create(request):
     serializer = ListingCreateSerializer(data=request.data)
 
     if serializer.is_valid():
-        # Get user's active subscription
-        active_subscription = UserSubscription.objects.filter(
-            userid=request.user,
-            subscription_status='active'
-        ).select_related('pricing_id').first()
-
-        # Check if user has an active subscription with quota
-        auto_activate = False
-        expiration_date = None
-        requires_payment = False
-
-        if active_subscription and active_subscription.is_active:
-            if active_subscription.has_quota:
-                # User has quota - auto-activate the listing
-                auto_activate = True
-                plan = active_subscription.pricing_id
-                expiration_date = timezone.now() + timedelta(days=plan.duration_days)
-            else:
-                # User exhausted their quota
-                requires_payment = True
-        else:
-            # No active subscription or expired
-            requires_payment = True
-
-        # Create the listing with appropriate status
-        listing = serializer.save(
-            userid=request.user,
-            listing_status='active' if auto_activate else 'pending',
-            expiration_date=expiration_date
-        )
-
-        # If auto-activated, increment the subscription's listings_used counter
-        if auto_activate:
-            active_subscription.listings_used += 1
-            active_subscription.save(update_fields=['listings_used', 'updatedat'])
-
-            create_notification(
-                user=request.user,
-                title='Listing Activated',
-                message=f'Your listing "{listing.listing_title}" is now live!',
-                notif_type='listing'
-            )
+        listing = serializer.save(userid=request.user)
 
         # Handle image uploads if provided
         images = request.FILES.getlist('images')
@@ -214,22 +173,11 @@ def listing_create(request):
                 print(f"Error uploading image {index}: {str(e)}")
                 continue
 
-        response_data = {
-            'message': 'Listing created successfully' if auto_activate else 'Listing created - payment required for activation',
+        return Response({
+            'message': 'Listing created successfully',
             'listing': ListingDetailSerializer(listing).data,
-            'images_uploaded': len(uploaded_images),
-            'activated': auto_activate,
-            'requires_payment': requires_payment
-        }
-
-        # Add subscription info if exists
-        if active_subscription:
-            response_data['subscription_info'] = {
-                'plan_name': active_subscription.pricing_id.pricing_name,
-                'remaining_listings': active_subscription.remaining_listings
-            }
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
+            'images_uploaded': len(uploaded_images)
+        }, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
-import { Home, LogOut, Menu, X, Plus } from "lucide-react";
+import { Home, User, LogOut, Menu, X, Plus } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { messagesApi } from "../../api/messages";
 import NotificationsDropdown from "../notifications/NotificationsDropdown";
-import Avatar from "../common/Avatar";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -57,7 +56,7 @@ export default function Header() {
                   className="text-gray-700 hover:text-primary-600 relative inline-block"
                 >
                   <span>Messages</span>
-                  {typeof unreadCount === 'number' && unreadCount > 0 && (
+                  {unreadCount && unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
@@ -84,12 +83,7 @@ export default function Header() {
                     to="/profile"
                     className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
                   >
-                    <Avatar
-                      src={user?.profile_photo}
-                      firstName={user?.user_firstname}
-                      lastName={user?.user_lastname}
-                      size="sm"
-                    />
+                    <User className="w-5 h-5" />
                     <span>{user?.user_firstname}</span>
                   </Link>
                   <button
