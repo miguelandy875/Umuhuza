@@ -31,11 +31,17 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link to="/listings?category=1" className="btn-secondary">
+              <Link
+                to="/listings?category=1"
+                className="btn btn-secondary flex items-center gap-2"
+              >
                 <Home className="w-5 h-5" />
                 Real Estate
               </Link>
-              <Link to="/listings?category=4" className="btn-secondary">
+              <Link
+                to="/listings?category=4"
+                className="btn btn-secondary flex items-center gap-2"
+              >
                 <Car className="w-5 h-5" />
                 Vehicles
               </Link>

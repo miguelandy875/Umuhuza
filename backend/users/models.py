@@ -22,7 +22,10 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_verified', True)
         extra_fields.setdefault('email_verified', True)
-        
+        extra_fields.setdefault('user_role', 'dealer')  # Superusers are dealers
+        extra_fields.setdefault('is_seller', True)
+        extra_fields.setdefault('is_dealer', True)
+
         return self.create_user(email, phone_number, password, **extra_fields)
 
 
@@ -42,11 +45,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     user_lastname = models.CharField(max_length=255, db_column='USER_LASTNAME')
     email = models.EmailField(unique=True, db_column='USER_EMAIL')
     phone_number = models.CharField(max_length=20, db_column='PHONE_NUMBER')
+    # Legacy role field - kept for backward compatibility
     user_role = models.CharField(
-        max_length=10, 
-        choices=USER_ROLES, 
+        max_length=10,
+        choices=USER_ROLES,
         default='buyer',
         db_column='USER_ROLE'
+    )
+    # New role flags - users can be multiple roles simultaneously
+    is_seller = models.BooleanField(
+        default=False,
+        db_column='IS_SELLER',
+        help_text='True if user has created at least one listing'
+    )
+    is_dealer = models.BooleanField(
+        default=False,
+        db_column='IS_DEALER',
+        help_text='True if user is an approved dealer'
     )
     profile_photo = models.CharField(
         max_length=255, 
@@ -98,6 +113,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f"{self.user_firstname} {self.user_lastname}"
+
+    @property
+    def roles(self):
+        """Return list of active roles for this user"""
+        roles = ['buyer']  # Everyone is a buyer
+        if self.is_seller:
+            roles.append('seller')
+        if self.is_dealer:
+            roles.append('dealer')
+        return roles
+
+    @property
+    def primary_role(self):
+        """Return the most important role for display purposes"""
+        if self.is_dealer:
+            return 'dealer'
+        elif self.is_seller:
+            return 'seller'
+        return 'buyer'
     
 
 # ============================================================================

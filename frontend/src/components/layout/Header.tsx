@@ -1,15 +1,24 @@
-import { Link } from 'react-router-dom';
-import { Home, User, LogOut, Menu, X, Plus } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
-import { useState } from 'react';
+import { Link } from "react-router-dom";
+import { Home, User, LogOut, Menu, X, Plus } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { messagesApi } from "../../api/messages";
+import NotificationsDropdown from "../notifications/NotificationsDropdown";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { data: unreadCount } = useQuery({
+    queryKey: ["unread-count"],
+    queryFn: messagesApi.getUnreadCount,
+    enabled: isAuthenticated,
+    refetchInterval: 10000, // Check every 10 seconds
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   return (
@@ -26,24 +35,54 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/listings" className="text-gray-700 hover:text-primary-600">
+            <Link
+              to="/listings"
+              className="text-gray-700 hover:text-primary-600"
+            >
               Browse Listings
             </Link>
-            
+
             {isAuthenticated ? (
               <>
-                <Link to="/listings/create" className="flex items-center gap-1 text-gray-700 hover:text-primary-600">
+                <Link
+                  to="/listings/create"
+                  className="flex items-center gap-1 text-gray-700 hover:text-primary-600"
+                >
                   <Plus className="w-4 h-4" />
                   Post Listing
                 </Link>
-                <Link to="/messages" className="text-gray-700 hover:text-primary-600">
-                  Messages
+                <Link
+                  to="/messages"
+                  className="text-gray-700 hover:text-primary-600 relative inline-block"
+                >
+                  <span>Messages</span>
+                  {unreadCount && unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
-                <Link to="/favorites" className="text-gray-700 hover:text-primary-600">
+                <Link
+                  to="/favorites"
+                  className="text-gray-700 hover:text-primary-600"
+                >
                   Favorites
                 </Link>
+                {/* Show My Listings link for sellers */}
+                {user?.user_role !== 'buyer' && (
+                  <Link
+                    to="/my-listings"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
+                    My Listings
+                  </Link>
+                )}
                 <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
-                  <Link to="/profile" className="flex items-center gap-2 text-gray-700 hover:text-primary-600">
+                  <NotificationsDropdown />
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
+                  >
                     <User className="w-5 h-5" />
                     <span>{user?.user_firstname}</span>
                   </Link>
@@ -58,7 +97,10 @@ export default function Header() {
               </>
             ) : (
               <div className="flex items-center gap-4">
-                <Link to="/login" className="text-gray-700 hover:text-primary-600">
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-primary-600"
+                >
                   Login
                 </Link>
                 <Link to="/register" className="btn-primary">
@@ -85,22 +127,51 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col gap-4">
-              <Link to="/listings" className="text-gray-700 hover:text-primary-600">
+              <Link
+                to="/listings"
+                className="text-gray-700 hover:text-primary-600"
+              >
                 Browse Listings
               </Link>
-              
+
               {isAuthenticated ? (
                 <>
-                  <Link to="/listings/create" className="text-gray-700 hover:text-primary-600">
+                  <Link
+                    to="/listings/create"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
                     Post Listing
                   </Link>
-                  <Link to="/messages" className="text-gray-700 hover:text-primary-600">
-                    Messages
+                  <Link
+                    to="/messages"
+                    className="text-gray-700 hover:text-primary-600 flex items-center justify-between"
+                  >
+                    <span>Messages</span>
+                    {unreadCount && unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Link>
-                  <Link to="/favorites" className="text-gray-700 hover:text-primary-600">
+                  <Link
+                    to="/favorites"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
                     Favorites
                   </Link>
-                  <Link to="/profile" className="text-gray-700 hover:text-primary-600">
+                  {/* Show My Listings link for sellers in mobile menu */}
+                  {user?.user_role !== 'buyer' && (
+                    <Link
+                      to="/my-listings"
+                      className="text-gray-700 hover:text-primary-600"
+                    >
+                      My Listings
+                    </Link>
+                  )}
+                  <Link
+                    to="/profile"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
                     Profile
                   </Link>
                   <button
@@ -112,10 +183,16 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="text-gray-700 hover:text-primary-600">
+                  <Link
+                    to="/login"
+                    className="text-gray-700 hover:text-primary-600"
+                  >
                     Login
                   </Link>
-                  <Link to="/register" className="btn-primary inline-block text-center">
+                  <Link
+                    to="/register"
+                    className="btn-primary inline-block text-center"
+                  >
                     Sign Up
                   </Link>
                 </>
