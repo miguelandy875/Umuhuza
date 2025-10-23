@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listingsApi } from '../api/listings';
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
+import Avatar from '../components/common/Avatar';
 import ReviewsList from '../components/reviews/ReviewsList';
 import {
   Mail, Phone, Calendar, Shield, Edit, LogOut,
@@ -49,9 +50,12 @@ export default function ProfilePage() {
         <div className="card mb-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-3xl">
-                {user.user_firstname[0]}{user.user_lastname[0]}
-              </div>
+              <Avatar
+                src={user.profile_photo}
+                firstName={user.user_firstname}
+                lastName={user.user_lastname}
+                size="xl"
+              />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{user.full_name}</h2>
                 <p className="text-gray-600 capitalize">{user.user_role}</p>

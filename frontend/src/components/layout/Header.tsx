@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { Home, User, LogOut, Menu, X, Plus } from "lucide-react";
+import { Home, LogOut, Menu, X, Plus } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { messagesApi } from "../../api/messages";
 import NotificationsDropdown from "../notifications/NotificationsDropdown";
+import Avatar from "../common/Avatar";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -83,7 +84,12 @@ export default function Header() {
                     to="/profile"
                     className="flex items-center gap-2 text-gray-700 hover:text-primary-600"
                   >
-                    <User className="w-5 h-5" />
+                    <Avatar
+                      src={user?.profile_photo}
+                      firstName={user?.user_firstname}
+                      lastName={user?.user_lastname}
+                      size="sm"
+                    />
                     <span>{user?.user_firstname}</span>
                   </Link>
                   <button

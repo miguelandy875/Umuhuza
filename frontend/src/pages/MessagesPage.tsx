@@ -8,6 +8,7 @@ import ChatList from '../components/messaging/ChatList';
 import MessageBubble from '../components/messaging/MessageBubble';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
+import Avatar from '../components/common/Avatar';
 import { Send, ArrowLeft, ExternalLink, Phone, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -158,11 +159,14 @@ export default function MessagesPage() {
                       >
                         <ArrowLeft className="w-5 h-5" />
                       </button>
-                      
-                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                        {otherUser?.user_firstname?.[0] || '?'}
-                      </div>
-                      
+
+                      <Avatar
+                        src={otherUser?.profile_photo}
+                        firstName={otherUser?.user_firstname}
+                        lastName={otherUser?.user_lastname}
+                        size="md"
+                      />
+
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">
                           {otherUser?.full_name || 'Unknown User'}
