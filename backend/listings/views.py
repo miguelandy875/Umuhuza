@@ -14,12 +14,15 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Category, Listing, ListingImage, PricingPlan, RatingReview, Favorite, ReportMisconduct
+from .models import Category, Listing, ListingImage, PricingPlan, RatingReview, Favorite, ReportMisconduct, UserSubscription
 from .serializers import (
     CategorySerializer, ListingSerializer, ListingCreateSerializer,
     ListingDetailSerializer, PricingPlanSerializer, RatingReviewSerializer,
-    RatingReviewCreateSerializer, FavoriteSerializer, ReportMisconductSerializer, ReportCreateSerializer
+    RatingReviewCreateSerializer, FavoriteSerializer, ReportMisconductSerializer, ReportCreateSerializer,
+    UserSubscriptionSerializer
 )
+from django.utils import timezone
+from datetime import timedelta
 
 from notifications.utils import create_notification
 
@@ -95,26 +98,139 @@ class ListingListView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def listing_create(request):
     """
-    Create a new listing
+    Create a new listing with images
     POST /api/listings/create/
-    {
-        "cat_id": 1,
-        "listing_title": "Beautiful House in Bujumbura",
-        "list_description": "3 bedrooms, 2 bathrooms...",
-        "listing_price": 50000000,
-        "list_location": "Bujumbura, Rohero"
-    }
+    Form-data:
+        cat_id: 1
+        listing_title: "Beautiful House"
+        list_description: "3 bedrooms..."
+        listing_price: 50000000
+        list_location: "Bujumbura, Rohero"
+        images: [file1, file2, ...]  (multiple files)
     """
     serializer = ListingCreateSerializer(data=request.data)
-    
+
     if serializer.is_valid():
-        listing = serializer.save(userid=request.user)
-        
-        return Response({
-            'message': 'Listing created successfully',
-            'listing': ListingDetailSerializer(listing).data
-        }, status=status.HTTP_201_CREATED)
-    
+        # Get user's active subscription
+        active_subscription = UserSubscription.objects.filter(
+            userid=request.user,
+            subscription_status='active'
+        ).select_related('pricing_id').first()
+
+        # Check if user has an active subscription with quota
+        auto_activate = False
+        expiration_date = None
+        requires_payment = False
+
+        if active_subscription and active_subscription.is_active:
+            if active_subscription.has_quota:
+                # User has quota - auto-activate the listing
+                auto_activate = True
+                plan = active_subscription.pricing_id
+                expiration_date = timezone.now() + timedelta(days=plan.duration_days)
+            else:
+                # User exhausted their quota
+                requires_payment = True
+        else:
+            # No active subscription or expired
+            requires_payment = True
+
+        # Create the listing with appropriate status
+        listing = serializer.save(
+            userid=request.user,
+            listing_status='active' if auto_activate else 'pending',
+            expiration_date=expiration_date
+        )
+
+        # If auto-activated, increment the subscription's listings_used counter
+        if auto_activate:
+            active_subscription.listings_used += 1
+            active_subscription.save(update_fields=['listings_used', 'updatedat'])
+
+            create_notification(
+                user=request.user,
+                title='Listing Activated',
+                message=f'Your listing "{listing.listing_title}" is now live!',
+                notif_type='listing'
+            )
+
+        # Handle image uploads if provided
+        images = request.FILES.getlist('images')
+        uploaded_images = []
+
+        for index, image_file in enumerate(images[:10]):  # Max 10 images
+            try:
+                # Validate file type
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+                if image_file.content_type not in allowed_types:
+                    continue
+
+                # Validate file size (5MB max)
+                if image_file.size > 5 * 1024 * 1024:
+                    continue
+
+                # Open and optimize image
+                img = Image.open(image_file)
+
+                # Convert to RGB if necessary
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+
+                # Resize if too large
+                max_width = 1920
+                if img.width > max_width:
+                    ratio = max_width / img.width
+                    new_height = int(img.height * ratio)
+                    img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+
+                # Save optimized image
+                output = BytesIO()
+                img.save(output, format='JPEG', quality=85, optimize=True)
+                output.seek(0)
+
+                # Generate unique filename
+                filename = f"listings/{listing.listing_id}/{uuid.uuid4().hex}.jpg"
+
+                # Save file
+                path = default_storage.save(filename, ContentFile(output.read()))
+                url = default_storage.url(path)
+
+                # Create image record
+                listing_image = ListingImage.objects.create(
+                    listing_id=listing,
+                    image_url=url,
+                    is_primary=(index == 0),  # First image is primary
+                    display_order=index
+                )
+
+                uploaded_images.append({
+                    'listimage_id': listing_image.listimage_id,
+                    'image_url': listing_image.image_url,
+                    'is_primary': listing_image.is_primary
+                })
+
+            except Exception as e:
+                # Log error but don't fail the entire request
+                print(f"Error uploading image {index}: {str(e)}")
+                continue
+
+        response_data = {
+            'message': 'Listing created successfully' if auto_activate else 'Listing created - payment required for activation',
+            'listing': ListingDetailSerializer(listing).data,
+            'images_uploaded': len(uploaded_images),
+            'activated': auto_activate,
+            'requires_payment': requires_payment
+        }
+
+        # Add subscription info if exists
+        if active_subscription:
+            response_data['subscription_info'] = {
+                'plan_name': active_subscription.pricing_id.pricing_name,
+                'remaining_listings': active_subscription.remaining_listings
+            }
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -359,6 +475,32 @@ def pricing_plans_list(request):
     plans = PricingPlan.objects.filter(is_active=True)
     serializer = PricingPlanSerializer(plans, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_subscription(request):
+    """
+    Get user's current active subscription
+    GET /api/subscription/current/
+    """
+    subscription = UserSubscription.objects.filter(
+        userid=request.user,
+        subscription_status='active'
+    ).select_related('pricing_id').first()
+
+    if not subscription:
+        return Response({
+            'message': 'No active subscription found',
+            'has_subscription': False
+        })
+
+    serializer = UserSubscriptionSerializer(subscription)
+    return Response({
+        'has_subscription': True,
+        'subscription': serializer.data
+    })
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
