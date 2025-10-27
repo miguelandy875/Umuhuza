@@ -15,7 +15,7 @@
 - [ ] Add branded email design
 
 ## SMS Integration  
-- [ ] Set up Africa's Talking API
+- [ ] Set up Africa's Talking API or TWILIO
 - [ ] Implement SMS sending
 - [ ] Add SMS delivery confirmation
 - [ ] Handle SMS failures gracefully
